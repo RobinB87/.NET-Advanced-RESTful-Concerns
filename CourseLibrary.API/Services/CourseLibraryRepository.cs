@@ -125,15 +125,19 @@ namespace CourseLibrary.API.Services
 
         public IEnumerable<Author> GetAuthors(AuthorsResourceParameters authorsResourceParameters)
         {
+            // Deferred execution: query execution occurs sometime after the query is constructed.
+            //  Can get this behaviour by working with IQueryable<T>
+            //  This stores query commands, not results
+            //  Then execution is deferred until the query is iterated over (e.g. by:
+            //      foreach loop,
+            //      ToList() - convert the expression tree to an actual list of items -
+            //      or singleton queryies like average, count or first)
+            //  Before this you can build your query and then finally execute it
+            // Hence, you are not loading all authors in memory, instead, only the amount requested is fetched
+
             if (authorsResourceParameters == null)
             {
                 throw new ArgumentNullException(nameof(authorsResourceParameters));
-            }
-
-            if (string.IsNullOrWhiteSpace(authorsResourceParameters.MainCategory)
-                 && string.IsNullOrWhiteSpace(authorsResourceParameters.SearchQuery))
-            {
-                return GetAuthors();
             }
 
             var collection = _context.Authors as IQueryable<Author>;
@@ -153,7 +157,14 @@ namespace CourseLibrary.API.Services
                     || a.LastName.Contains(searchQuery));
             }
 
-            return collection.ToList();
+            // It is important to add paging functionality last, because you want to page at the filtered search collection
+            return collection
+                // First skip an amount of authors 
+                //  e.g. when page 2 is requested, the authors for page 1 are skipped
+                .Skip(authorsResourceParameters.PageSize * (authorsResourceParameters.PageNumber -1))
+                // Then take the requested pagesize
+                .Take(authorsResourceParameters.PageSize)
+                .ToList();
         }
 
         public IEnumerable<Author> GetAuthors(IEnumerable<Guid> authorIds)
