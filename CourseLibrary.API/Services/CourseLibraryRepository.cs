@@ -158,6 +158,16 @@ namespace CourseLibrary.API.Services
                     || a.LastName.Contains(searchQuery));
             }
 
+            if (!string.IsNullOrWhiteSpace(authorsResourceParameters.OrderBy))
+            {
+                if (authorsResourceParameters.OrderBy.ToLowerInvariant() == "name")
+                {
+                    collection = collection.OrderBy(a => a.FirstName).ThenBy(a => a.LastName);
+                }
+
+                //collection.ApplySort(authorsResourceParameters.OrderBy, _mappingDictionary);
+            }
+
             // It is important to add paging functionality last, because you want to page at the filtered search collection
             return PagedList<Author>
                 .Create(collection, authorsResourceParameters.PageNumber, authorsResourceParameters.PageSize);

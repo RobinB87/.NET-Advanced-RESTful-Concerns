@@ -17,5 +17,9 @@
             get => _pageSize;
             set => _pageSize = (value > maxPageSize) ? maxPageSize : value;
         }
+
+        // For authors sorting, name is an okay default
+        // But, name is not on the entity, hence map it
+        public string OrderBy { get; set; } = "Name";
     }
 }
