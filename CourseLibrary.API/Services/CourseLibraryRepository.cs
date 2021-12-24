@@ -1,6 +1,7 @@
 ﻿using CourseLibrary.API.DbContexts;
 using CourseLibrary.API.Entities;
 using CourseLibrary.API.Helpers;
+using CourseLibrary.API.Models;
 using CourseLibrary.API.ResourceParameters;
 using System;
 using System.Collections.Generic;
@@ -11,10 +12,14 @@ namespace CourseLibrary.API.Services
     public class CourseLibraryRepository : ICourseLibraryRepository, IDisposable
     {
         private readonly CourseLibraryContext _context;
+        private readonly IPropertyMappingService _propertyMappingService;
 
-        public CourseLibraryRepository(CourseLibraryContext context )
+        public CourseLibraryRepository(CourseLibraryContext context,
+            IPropertyMappingService propertyMappingService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _propertyMappingService = propertyMappingService 
+                ?? throw new ArgumentNullException(nameof(propertyMappingService));
         }
 
         public void AddCourse(Guid authorId, Course course)
@@ -160,12 +165,11 @@ namespace CourseLibrary.API.Services
 
             if (!string.IsNullOrWhiteSpace(authorsResourceParameters.OrderBy))
             {
-                if (authorsResourceParameters.OrderBy.ToLowerInvariant() == "name")
-                {
-                    collection = collection.OrderBy(a => a.FirstName).ThenBy(a => a.LastName);
-                }
+                // Get property mapping dictionary
+                var authorPropertyMappingDictionary =
+                    _propertyMappingService.GetPropertyMapping<AuthorDto, Author>();
 
-                //collection.ApplySort(authorsResourceParameters.OrderBy, _mappingDictionary);
+                collection = collection.ApplySort(authorsResourceParameters.OrderBy, authorPropertyMappingDictionary);
             }
 
             // It is important to add paging functionality last, because you want to page at the filtered search collection
