@@ -1,5 +1,6 @@
 ﻿using CourseLibrary.API.DbContexts;
 using CourseLibrary.API.Entities;
+using CourseLibrary.API.Helpers;
 using CourseLibrary.API.ResourceParameters;
 using System;
 using System.Collections.Generic;
@@ -123,7 +124,7 @@ namespace CourseLibrary.API.Services
             return _context.Authors.ToList<Author>();
         }
 
-        public IEnumerable<Author> GetAuthors(AuthorsResourceParameters authorsResourceParameters)
+        public PagedList<Author> GetAuthors(AuthorsResourceParameters authorsResourceParameters)
         {
             // Deferred execution: query execution occurs sometime after the query is constructed.
             //  Can get this behaviour by working with IQueryable<T>
@@ -158,13 +159,8 @@ namespace CourseLibrary.API.Services
             }
 
             // It is important to add paging functionality last, because you want to page at the filtered search collection
-            return collection
-                // First skip an amount of authors 
-                //  e.g. when page 2 is requested, the authors for page 1 are skipped
-                .Skip(authorsResourceParameters.PageSize * (authorsResourceParameters.PageNumber -1))
-                // Then take the requested pagesize
-                .Take(authorsResourceParameters.PageSize)
-                .ToList();
+            return PagedList<Author>
+                .Create(collection, authorsResourceParameters.PageNumber, authorsResourceParameters.PageSize);
         }
 
         public IEnumerable<Author> GetAuthors(IEnumerable<Guid> authorIds)
