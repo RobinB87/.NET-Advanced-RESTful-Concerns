@@ -91,7 +91,9 @@ namespace CourseLibrary.API
                 };
             });
 
+            // Lightweight stateless services; hence transient is a good lifetime
             services.AddTransient<IPropertyMappingService, PropertyMappingService>();
+            services.AddTransient<IPropertyCheckerService, PropertyCheckerService>();
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
