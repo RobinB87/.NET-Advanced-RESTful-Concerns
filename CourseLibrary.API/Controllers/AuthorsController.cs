@@ -51,25 +51,13 @@ namespace CourseLibrary.API.Controllers
 
             var authorsFromRepo = _courseLibraryRepository.GetAuthors(authorsResourceParameters);
 
-            // First check if there is a previous page
-            var previousPageLink = authorsFromRepo.HasPrevious
-                ? CreateAuthorsResourceUri(authorsResourceParameters, ResourceUriType.PreviousPage)
-                : null;
-
-            // Same for next
-            var nextPageLink = authorsFromRepo.HasNext
-                ? CreateAuthorsResourceUri(authorsResourceParameters, ResourceUriType.NextPage)
-                : null;
-
             // Now create the metadata
             var paginationMetadata = new
             {
                 totalCount = authorsFromRepo.TotalCount,
                 pageSize = authorsFromRepo.PageSize,
                 currentPage = authorsFromRepo.CurrentPage,
-                totalPages = authorsFromRepo.TotalPages,
-                previousPageLink,
-                nextPageLink
+                totalPages = authorsFromRepo.TotalPages
             };
 
             // Add as custom headers to the response
@@ -77,7 +65,8 @@ namespace CourseLibrary.API.Controllers
             Response.Headers.Add(
                 "X-Pagination", JsonSerializer.Serialize(paginationMetadata));
 
-            var links = CreateLinksForAuthors(authorsResourceParameters);
+            var links = CreateLinksForAuthors(authorsResourceParameters, 
+                authorsFromRepo.HasNext, authorsFromRepo.HasPrevious);
 
             var shapedAuthors = _mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo)
                 .ShapeData(authorsResourceParameters.Fields);
@@ -268,7 +257,8 @@ namespace CourseLibrary.API.Controllers
             return links;
         }
 
-        private IEnumerable<LinkDto> CreateLinksForAuthors(AuthorsResourceParameters authorsResourceParameters)
+        private IEnumerable<LinkDto> CreateLinksForAuthors(AuthorsResourceParameters authorsResourceParameters,
+            bool hasNext, bool hasPrevious)
         {
             var links = new List<LinkDto>();
 
@@ -277,6 +267,22 @@ namespace CourseLibrary.API.Controllers
                new LinkDto(CreateAuthorsResourceUri(
                    authorsResourceParameters, ResourceUriType.Current)
                , "self", "GET"));
+
+            if (hasNext)
+            {
+                links.Add(
+                  new LinkDto(CreateAuthorsResourceUri(
+                      authorsResourceParameters, ResourceUriType.NextPage),
+                  "nextPage", "GET"));
+            }
+
+            if (hasPrevious)
+            {
+                links.Add(
+                    new LinkDto(CreateAuthorsResourceUri(
+                        authorsResourceParameters, ResourceUriType.PreviousPage),
+                    "previousPage", "GET"));
+            }
 
             return links;
         }
