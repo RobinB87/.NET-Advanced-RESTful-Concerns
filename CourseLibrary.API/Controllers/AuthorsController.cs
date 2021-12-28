@@ -160,6 +160,7 @@ namespace CourseLibrary.API.Controllers
         /// <summary>
         /// Depending on the content type header value, an AuthorForCreationDto or an
         /// AuthorForCreationWithDateOfDeathDto should be accepted. 
+        /// 
         /// It is important to put the most specific method first (with date of death)
         /// </summary>
         /// <param name="author"></param>
