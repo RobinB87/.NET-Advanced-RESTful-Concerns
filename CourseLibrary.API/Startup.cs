@@ -36,6 +36,13 @@ namespace CourseLibrary.API
             {
                 setupAction.ReturnHttpNotAcceptable = true;
 
+                // Add cache profile (is a dictionary, hence use a name)
+                setupAction.CacheProfiles.Add("240SecondsCacheProfile",
+                    new CacheProfile
+                    {
+                        Duration = 240
+                    });
+
             }).AddNewtonsoftJson(setupAction =>
              {
                  setupAction.SerializerSettings.ContractResolver =
