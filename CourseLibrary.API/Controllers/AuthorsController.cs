@@ -5,10 +5,10 @@ using CourseLibrary.API.Models;
 using CourseLibrary.API.ResourceParameters;
 using CourseLibrary.API.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace CourseLibrary.API.Controllers
@@ -89,11 +89,20 @@ namespace CourseLibrary.API.Controllers
             return Ok(linkedCollectionResource);
         }
 
+        // Pass in allowed types instead of setting it globally in startup class
+        // Any type not in this list will return 406 not accepted
+        [Produces("application/json",
+            "application/vnd.marvin.hateoas+json",
+            "application/vnd.marvin.author.full+json",
+            "application/vnd.marvin.author.full.hateoas+json",
+            "application/vnd.marvin.author.friendly+json",
+            "application/vnd.marvin.author.friendly.hateoas+json")]
         [HttpGet("{authorId}", Name ="GetAuthor")]
         public IActionResult GetAuthor(Guid authorId, string fields,
             [FromHeader(Name = "Accept")] string mediaType)
         {
-            if (!MediaTypeHeaderValue.TryParse(mediaType, out MediaTypeHeaderValue parsedMediaType))
+            if (!MediaTypeHeaderValue.TryParse(mediaType, 
+                out MediaTypeHeaderValue parsedMediaType))
             {
                 return BadRequest();
             }
@@ -110,22 +119,41 @@ namespace CourseLibrary.API.Controllers
             {
                 return NotFound();
             }
-            
-            // Only create and return links when mediatype matches
-            if (parsedMediaType.MediaType == "application/vnd.marvin.hateoas+json")
+
+            // Check whether links should be included
+            var includeLinks = parsedMediaType.SubTypeWithoutSuffix
+                .EndsWith("hateoas", StringComparison.InvariantCultureIgnoreCase);
+
+            IEnumerable<LinkDto> links = new List<LinkDto>();
+
+            if (includeLinks) 
+                links = CreateLinksForAuthor(authorId, fields);
+
+            var primaryMediaType = includeLinks
+                ? parsedMediaType.SubTypeWithoutSuffix
+                    .Substring(0, parsedMediaType.SubTypeWithoutSuffix.Length - 8)
+                : parsedMediaType.SubTypeWithoutSuffix;
+
+            // Full author
+            if (primaryMediaType == "vnd.marvin.author.full")
             {
-                var links = CreateLinksForAuthor(authorId, fields);
+                var fullResourceToReturn = _mapper.Map<AuthorFullDto>(authorFromRepo)
+                    .ShapeData(fields) as IDictionary<string, object>;
 
-                var linkedResourceToReturn = _mapper.Map<AuthorDto>(authorFromRepo)
-                .ShapeData(fields) as IDictionary<string, object>;
+                if (includeLinks)
+                    fullResourceToReturn.Add("links", links);
 
-                linkedResourceToReturn.Add("links", links);
-
-                return Ok(linkedResourceToReturn);
+                return Ok(fullResourceToReturn);
             }
 
-            return Ok(_mapper.Map<AuthorDto>(authorFromRepo)
-                .ShapeData(fields));
+            // Friendly author
+            var friendlyResourceToReturn = _mapper.Map<AuthorDto>(authorFromRepo)
+                .ShapeData(fields) as IDictionary<string, object>;
+
+            if (includeLinks)
+                friendlyResourceToReturn.Add("links", links);
+
+            return Ok(friendlyResourceToReturn);
         }
 
         [HttpPost(Name = "CreateAuthor")]
