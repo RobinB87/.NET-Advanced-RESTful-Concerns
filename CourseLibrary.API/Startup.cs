@@ -29,6 +29,9 @@ namespace CourseLibrary.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // Add cache store
+            services.AddResponseCaching();
+
             services.AddControllers(setupAction =>
             {
                 setupAction.ReturnHttpNotAcceptable = true;
@@ -140,6 +143,12 @@ namespace CourseLibrary.API
                 });
 
             }
+
+            // Add the cache middleware to the request pipeline
+            // Ensure it is used before UseRouting and UseEndpoints
+            // This ensures the cache middleware can serve something up before the rest of the 
+            // MVC logic is routed to or executed
+            app.UseResponseCaching();
 
             app.UseRouting();
 
