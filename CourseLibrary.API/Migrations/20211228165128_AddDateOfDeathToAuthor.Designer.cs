@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CourseLibrary.API.Migrations
 {
     [DbContext(typeof(CourseLibraryContext))]
-    [Migration("20211228161416_AddDateOfDeathToAuthor")]
+    [Migration("20211228165128_AddDateOfDeathToAuthor")]
     partial class AddDateOfDeathToAuthor
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
