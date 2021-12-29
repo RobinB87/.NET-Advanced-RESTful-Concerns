@@ -29,6 +29,17 @@ namespace CourseLibrary.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpCacheHeaders(expirationModelOptions => 
+            {
+                expirationModelOptions.MaxAge = 60;
+                expirationModelOptions.CacheLocation = Marvin.Cache.Headers.CacheLocation.Private;
+            },
+            validationModelOptions =>
+            {
+                // If response becomes still, must revalidate
+                validationModelOptions.MustRevalidate = true;
+            });
+
             // Add cache store
             services.AddResponseCaching();
 
@@ -156,6 +167,8 @@ namespace CourseLibrary.API
             // This ensures the cache middleware can serve something up before the rest of the 
             // MVC logic is routed to or executed
             app.UseResponseCaching();
+
+            app.UseHttpCacheHeaders();
 
             app.UseRouting();
 
